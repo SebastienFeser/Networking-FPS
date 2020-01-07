@@ -6,6 +6,7 @@ public class PlayerController : MonoBehaviour
 {
     [SerializeField] private float movementSpeed;
     [SerializeField] private float sprintSpeedMultiplier;
+    [SerializeField] Camera camera;
     private float sprint = 1;
 
     Rigidbody playerRigidbody;
@@ -32,8 +33,31 @@ public class PlayerController : MonoBehaviour
             sprint = 1;
         }*/
 
+        Shooting();
+
         velocityYBackup = playerRigidbody.velocity.y;
         playerRigidbody.velocity = transform.forward * movementSpeed * sprint * getVertical + transform.right * movementSpeed * getHorizontal;
         playerRigidbody.velocity = new Vector3(playerRigidbody.velocity.x, velocityYBackup, playerRigidbody.velocity.z);
+    }
+
+    void Shooting()
+    {
+        if (Input.GetButtonDown("Shoot"))
+        {
+            RaycastHit hit;
+            Ray ray = camera.ScreenPointToRay(Input.mousePosition);
+
+            if (Physics.Raycast(ray, out hit))
+            {
+                if (hit.transform.tag == "Player")
+                {
+                    Debug.Log("Shoot");
+                }
+                else
+                {
+                    return;
+                }
+            }
+        }
     }
 }

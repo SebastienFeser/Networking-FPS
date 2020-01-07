@@ -15,9 +15,10 @@ public class GameManager : MonoBehaviourPunCallbacks
         MASTER_HAS_LOADED_SCENE,
         WAITING_FOR_EVERYONE_LOADED_SCENE,
         EVERYONE_LOADED_SCENE,
+        START,
     }
 
-    GameState gameState;
+    GameState gameState = GameState.WAITING_MASTER_LOADED_SCENE;
 
     int playerHasLoaded = 0;
 
@@ -54,13 +55,14 @@ public class GameManager : MonoBehaviourPunCallbacks
                 WaitingForEveryoneLoadedScene();
                 break;
             case GameState.EVERYONE_LOADED_SCENE:
-                EveryoneHasLoadedScene();
+                EveryOneHasLoadedScene();
                 break;
         }
     }
 
     void WaitingMasterConnected()
     {
+        Debug.Log("WaitMasterConnected");
         if (PhotonNetwork.IsMasterClient)
         {
 
@@ -78,19 +80,23 @@ public class GameManager : MonoBehaviourPunCallbacks
 
     void WaitingForEveryoneLoadedScene()
     {
+        Debug.Log("WaitEveryoneConnected");
         if (PhotonNetwork.IsMasterClient)
         {
             if (playerHasLoaded == PhotonNetwork.CurrentRoom.PlayerCount)
             {
-                photonView.RPC("EveryoneHasLoadedScene", RpcTarget.All);
+                photonView.RPC("EveryoneHasLoadedSceneGameState", RpcTarget.All);
+                Debug.Log(gameState);
             }
         }
     }
 
     void EveryOneHasLoadedScene()
     {
+        Debug.Log("Everyone loaded");
         GetPlayerIndex();
         SpawnPlayer();
+        gameState = GameState.START;
     }
 
     void GetPlayerIndex()
@@ -106,7 +112,13 @@ public class GameManager : MonoBehaviourPunCallbacks
 
     void SpawnPlayer()
     {
-        PhotonNetwork.Instantiate("Player", initialSpawnPoints[playerIndex], Quaternion.identity);
+        Debug.Log("Spawn Player");
+        GameObject currentPlayer;
+        currentPlayer = PhotonNetwork.Instantiate("Player", initialSpawnPoints[playerIndex], Quaternion.identity);
+        currentPlayer.GetComponent<PlayerController>().enabled = true;
+        currentPlayer.GetComponentInChildren<Camera>().enabled = true;
+        currentPlayer.GetComponentInChildren<AudioListener>().enabled = true;
+        currentPlayer.GetComponentInChildren<PlayerCamera>().enabled = true;
     }
 
 
@@ -129,7 +141,7 @@ public class GameManager : MonoBehaviourPunCallbacks
     }
 
     [PunRPC]
-    void EveryoneHasLoadedScene()
+    void EveryoneHasLoadedSceneGameState()
     {
         gameState = GameState.EVERYONE_LOADED_SCENE;
     }

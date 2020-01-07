@@ -37,5 +37,6 @@ MonoBehaviour:
   - EveryoneHasLoadedScene
   - IncreasePlayerHasLoaded
   - InformTheMasterHasLoadedScene
+  - EveryoneHasLoadedSceneGameState
   DisableAutoOpenWizard: 1
   ShowSettings: 0
