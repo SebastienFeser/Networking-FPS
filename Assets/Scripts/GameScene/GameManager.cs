@@ -1,11 +1,25 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using Photon.Pun;
 
 public class GameManager : MonoBehaviourPunCallbacks
 {
     [SerializeField] Vector3[] initialSpawnPoints;              //4 different spawn
+    [SerializeField] Image reloadBar;
+    public Image ReloadBar
+    {
+        get => reloadBar;
+        set => reloadBar = value;
+    }
+
+    [SerializeField] GameObject reloadingPannel;
+    public  GameObject ReloadingPannel
+    {
+        get => reloadingPannel;
+        set => reloadingPannel = value;
+    }
 
     bool masterHasLoadedScene = false;
 
@@ -119,13 +133,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         currentPlayer.GetComponentInChildren<Camera>().enabled = true;
         currentPlayer.GetComponentInChildren<AudioListener>().enabled = true;
         currentPlayer.GetComponentInChildren<PlayerCamera>().enabled = true;
-    }
-
-
-    struct PlayerData
-    {
-        int score;
-        int deaths;
+        currentPlayer.GetComponent<PlayerData>().Index = playerIndex;
     }
 
     [PunRPC]
