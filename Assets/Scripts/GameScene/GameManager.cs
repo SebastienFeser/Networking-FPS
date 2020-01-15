@@ -7,6 +7,12 @@ using Photon.Pun;
 public class GameManager : MonoBehaviourPunCallbacks
 {
     [SerializeField] Vector3[] initialSpawnPoints;              //4 different spawn
+    public Vector3[] InitialSpawnPoints
+    {
+        get => initialSpawnPoints;
+        set => initialSpawnPoints = value;
+    }
+
     [SerializeField] Image reloadBar;
     public Image ReloadBar
     {

@@ -305,7 +305,7 @@ GameObject:
   - component: {fileID: 8220084151896915583}
   m_Layer: 0
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: PlayerParent
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -357,6 +357,10 @@ MonoBehaviour:
   movementSpeed: 5
   sprintSpeedMultiplier: 2
   camera: {fileID: 2011674339360102907}
+  BulletVelocity: 50
+  playerData: {fileID: 8220084151896915583}
+  ball: {fileID: 5600758030696470154, guid: 26034aae3fea3a74292c5dda0a1b4e66, type: 3}
+  invisibleTimeWhenRespawned: 3
   reloadTime: 2
 --- !u!54 &2011674340154631084
 Rigidbody:
@@ -412,8 +416,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_SynchronizeVelocity: 1
   m_SynchronizeAngularVelocity: 0
-  m_TeleportEnabled: 0
-  m_TeleportIfDistanceGreaterThan: 3
+  m_TeleportEnabled: 1
+  m_TeleportIfDistanceGreaterThan: 5
 --- !u!114 &1273087704126765266
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -429,7 +433,7 @@ MonoBehaviour:
   m_PositionModel:
     SynchronizeEnabled: 1
     TeleportEnabled: 1
-    TeleportIfDistanceGreaterThan: 3
+    TeleportIfDistanceGreaterThan: 5
     InterpolateOption: 2
     InterpolateMoveTowardsSpeed: 1
     InterpolateLerpSpeed: 1
