@@ -32,23 +32,26 @@ public class BallShoot : MonoBehaviourPunCallbacks
         }
         else if (other.tag == "PlayerParent")
         {
-            if (other.GetComponent<PhotonView>().OwnerActorNr == shooterActorNumber)
+            if (other.GetComponent<PhotonView>().IsMine)
             {
-                Debug.Log("IsCurrentPlayer");
-            }
-            else
-            {
-                if (other.GetComponent<PlayerController>().isInvincible)
+                if (PhotonNetwork.LocalPlayer.ActorNumber == shooterActorNumber)
                 {
-                    Destroy(gameObject);
                 }
                 else
                 {
-                    other.GetComponent<PlayerController>().Die(shooterActorNumber);
-                    Debug.Log("Player Killed");
-                    Destroy(gameObject);
+                    if (other.GetComponent<PlayerController>().isInvincible)
+                    {
+                        Destroy(gameObject);
+                    }
+                    else
+                    {
+                        Debug.Log("BallShoot Actor Number = " + shooterActorNumber);
+                        other.GetComponent<PlayerController>().Die(shooterActorNumber);
+                        Destroy(gameObject);
+                    }
                 }
             }
+            
         }
         /*if (photonView.IsMine)
         {

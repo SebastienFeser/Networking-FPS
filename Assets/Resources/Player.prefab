@@ -360,7 +360,12 @@ MonoBehaviour:
   BulletVelocity: 50
   playerData: {fileID: 8220084151896915583}
   ball: {fileID: 5600758030696470154, guid: 26034aae3fea3a74292c5dda0a1b4e66, type: 3}
-  invisibleTimeWhenRespawned: 3
+  invincibleTimeWhenRespawned: 3
+  isInvincible: 0
+  uiTexts: {fileID: 0}
+  hasBeenKilledTextTime: 3
+  hasKilledTextTime: 3
+  PlayerKilledOrKillerName: Error
   reloadTime: 2
 --- !u!54 &2011674340154631084
 Rigidbody:

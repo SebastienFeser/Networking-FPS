@@ -7,6 +7,7 @@ using Photon.Pun;
 public class GameManager : MonoBehaviourPunCallbacks
 {
     [SerializeField] Vector3[] initialSpawnPoints;              //4 different spawn
+    public PlayerController myPlayerController;
     public Vector3[] InitialSpawnPoints
     {
         get => initialSpawnPoints;
@@ -142,6 +143,11 @@ public class GameManager : MonoBehaviourPunCallbacks
         currentPlayer.GetComponent<PlayerData>().Index = playerIndex;
     }
 
+    public void GivePointsToKiller(int killerActorNumber)
+    {
+        photonView.RPC("GivePointsToKiller", RpcTarget.All, killerActorNumber, PhotonNetwork.LocalPlayer.ActorNumber);
+    }
+
     [PunRPC]
     void IncreasePlayerHasLoaded()
     {
@@ -158,5 +164,18 @@ public class GameManager : MonoBehaviourPunCallbacks
     void EveryoneHasLoadedSceneGameState()
     {
         gameState = GameState.EVERYONE_LOADED_SCENE;
+    }
+
+    [PunRPC]
+    void GivePointsToKiller(int killerActorNumber, int killedActorNumber)
+    {
+        Debug.Log("Give Points To Killer Actor Number = " + killerActorNumber);
+        Debug.Log("OwnerActorNr = " + PhotonNetwork.LocalPlayer.ActorNumber + " and killerActorNumber = " + killerActorNumber);
+        if (PhotonNetwork.LocalPlayer.ActorNumber == killerActorNumber)
+        {
+
+            myPlayerController.PlayerKilledOrKillerName = PhotonNetwork.CurrentRoom.GetPlayer(killedActorNumber).NickName;
+            myPlayerController.PlayerHasKilled();
+        }
     }
 }

@@ -19,6 +19,8 @@ public class MainPannel : MonoBehaviourPunCallbacks
     [SerializeField] GameObject lobbySelectionPannel;
     [SerializeField] GameObject insideRoomPannel;
 
+    [SerializeField] GameObject roomUIPrefab;
+
     [SerializeField] TextMeshProUGUI[] playerList;
 
 
@@ -72,6 +74,7 @@ public class MainPannel : MonoBehaviourPunCallbacks
 
     public void StartGame()
     {
+        //photonView.RPC("DeactivateAllPannelsForEveryOne", RpcTarget.All);
         DesactivateAllPannels();
         PhotonNetwork.LoadLevel("GameScene");
     }
@@ -176,6 +179,25 @@ public class MainPannel : MonoBehaviourPunCallbacks
         {
             playerList[i].text = PhotonNetwork.PlayerList[i].NickName;
         }
+    }
+
+    void ClearRoomList()
+    {
+
+    }
+
+    void UpdateRoomList()
+    {
+        foreach (RoomInfo info in roomList.Values)
+        {
+            //Instantiate Room
+        }
+    }
+
+    [PunRPC]
+    void DeactivateAllPannelsForEveryOne()
+    {
+        DesactivateAllPannels();
     }
 
 }

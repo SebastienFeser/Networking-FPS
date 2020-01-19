@@ -16,6 +16,7 @@ public class PlayerController : MonoBehaviourPunCallbacks
     public bool isInvincible = false;
     bool hasRespawned = true;
     GameManager gameManager;
+    [SerializeField] UITexts uiTexts;
 
 
     private float sprint = 1;
@@ -27,6 +28,15 @@ public class PlayerController : MonoBehaviourPunCallbacks
     float velocityYBackup;
     bool canShoot = true;
 
+    [SerializeField] float hasBeenKilledTextTime = 3f;
+    float hasBeenKilledTextCurrentTime = 0;
+    bool hasBeenKilled = false;
+    [SerializeField] float hasKilledTextTime = 3f;
+    float hasKilledTextCurrentTime = 0;
+    bool hasKilled = false;
+
+    [SerializeField] public string PlayerKilledOrKillerName = "Error";
+
     [SerializeField] float reloadTime;
     float reloadCurrentTime;
 
@@ -35,12 +45,46 @@ public class PlayerController : MonoBehaviourPunCallbacks
     {
         playerRigidbody = GetComponent<Rigidbody>();
         gameManager = FindObjectOfType<GameManager>();
+        uiTexts = FindObjectOfType<UITexts>();
+        hasKilledTextCurrentTime = hasKilledTextTime;
+        hasBeenKilledTextCurrentTime = hasBeenKilledTextTime;
+        gameManager.myPlayerController = this;
 
     }
 
 
     private void Update()
     {
+        Debug.Log(uiTexts);
+        /*Debug.Log(hasKilled);
+        if (hasBeenKilled)
+        {
+            uiTexts.CentralScreenText.text = "Has Been Killed By " + PlayerKilledOrKillerName;
+            hasBeenKilledTextCurrentTime -= Time.deltaTime;
+            //hasKilled = false;
+            if (hasBeenKilledTextCurrentTime <= 0)
+            {
+                uiTexts.CentralScreenText.text = "";
+                hasBeenKilledTextCurrentTime = hasBeenKilledTextTime;
+                hasBeenKilled = false;
+            }
+        }
+
+        if (hasKilled)
+        {
+
+            Debug.Log("If hasKilled = " + hasKilled);
+            uiTexts.CentralScreenText.text = "Has Killed " + PlayerKilledOrKillerName;
+            hasKilledTextCurrentTime -= Time.deltaTime;
+            //hasBeenKilled = false;
+            if (hasKilledTextCurrentTime <= 0)
+            {
+                uiTexts.CentralScreenText.text = "";
+                hasKilledTextCurrentTime = hasKilledTextTime;
+                hasKilled = false;
+            }
+        }*/
+
         if (!hasRespawned)
         {
             respawnInvincibleTimeCurrent = 0;
@@ -73,7 +117,7 @@ public class PlayerController : MonoBehaviourPunCallbacks
         {
             if (Input.GetButtonDown("Shoot"))
             {
-                photonView.RPC("SpawnBall", RpcTarget.All, camera.transform.position, camera.transform.forward * BulletVelocity, photonView.OwnerActorNr);
+                photonView.RPC("SpawnBall", RpcTarget.All, camera.transform.position, camera.transform.forward * BulletVelocity, PhotonNetwork.LocalPlayer.ActorNumber);
                 reloadCurrentTime = 0;
                 canShoot = false;
                 gameManager.ReloadingPannel.SetActive(true);
@@ -116,8 +160,11 @@ public class PlayerController : MonoBehaviourPunCallbacks
 
     public void Die(int killerActorNumber)
     {
-        Debug.Log("You were killed By " + PhotonNetwork.CurrentRoom.GetPlayer(killerActorNumber).NickName);
-        photonView.RPC("GivePointsToKiller", RpcTarget.All, killerActorNumber);
+        Debug.Log("Die Actor Number = " + killerActorNumber);
+        PlayerKilledOrKillerName = PhotonNetwork.CurrentRoom.GetPlayer(killerActorNumber).NickName;
+        //hasBeenKilled = true;
+        gameManager.GivePointsToKiller(killerActorNumber);
+        StartCoroutine("HasBeenKilled");
         float maxDistance = 0;
         Vector3 respawnPoint = new Vector3(0,0,0);
         foreach(Vector3 spawnPoint in gameManager.InitialSpawnPoints)
@@ -129,8 +176,13 @@ public class PlayerController : MonoBehaviourPunCallbacks
             }
             gameObject.transform.position = respawnPoint;
             hasRespawned = false;
-
+            
         }
+    }
+
+    public void PlayerHasKilled()
+    {
+        StartCoroutine("HasKilled");
     }
 
 
@@ -140,16 +192,27 @@ public class PlayerController : MonoBehaviourPunCallbacks
         GameObject ballInstantiated = Instantiate(ball, position, Quaternion.identity);
         ballInstantiated.GetComponent<Rigidbody>().velocity = velocity;
         ballInstantiated.GetComponent<BallShoot>().shooterActorNumber = ownerActorNumber;
+        Debug.Log("SpawnBall Actor Number = " + ownerActorNumber);
     }
 
-    [PunRPC]
-    void GivePointsToKiller(int killerActorNumber)
+    IEnumerator HasKilled()
     {
-        if (photonView.OwnerActorNr == killerActorNumber)
-        {
-            Debug.Log("You get your points");
-        }
+        Debug.Log(uiTexts);
+        uiTexts.CentralScreenText.text = "Has Killed " + PlayerKilledOrKillerName;
+        yield return new WaitForSeconds(hasKilledTextTime);
+        uiTexts.CentralScreenText.text = "";
     }
+
+    IEnumerator HasBeenKilled()
+    {
+        Debug.Log(uiTexts);
+        uiTexts.CentralScreenText.text = "HHas Been Killed By " + PlayerKilledOrKillerName;
+        yield return new WaitForSeconds(hasBeenKilledTextTime);
+        uiTexts.CentralScreenText.text = "";
+    }
+
+    //TODO: Replace by coroutines the has killed of has been killed
+
     /*void Mines()
     {
         //CastRay with distance for C4, Middle screen, from camera

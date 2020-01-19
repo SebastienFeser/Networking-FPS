@@ -43,5 +43,6 @@ MonoBehaviour:
   - IncreaseTargetPlayerPoints
   - GivePointsToKiller
   - SpawnBall
+  - DeactivateAllPannelsForEveryOne
   DisableAutoOpenWizard: 1
   ShowSettings: 0
