@@ -44,5 +44,6 @@ MonoBehaviour:
   - GivePointsToKiller
   - SpawnBall
   - DeactivateAllPannelsForEveryOne
+  - InformMasterHasLoaded
   DisableAutoOpenWizard: 1
   ShowSettings: 0

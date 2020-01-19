@@ -198,6 +198,7 @@ GameObject:
   - component: {fileID: 2011674339360102907}
   - component: {fileID: 2011674339360102906}
   - component: {fileID: 2011674339360102905}
+  - component: {fileID: 335112994684486943}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -286,6 +287,22 @@ MonoBehaviour:
   mouseYInputName: Mouse Y
   mouseSensitivity: 500
   playerBody: {fileID: 2011674340154631080}
+--- !u!114 &335112994684486943
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2011674339360102885}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 49628a53ee319654993b6133f888f444, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mouseXInputName: 
+  mouseYInputName: 
+  mouseSensitivity: 0
+  playerBody: {fileID: 0}
 --- !u!1 &2011674340154631083
 GameObject:
   m_ObjectHideFlags: 0
@@ -303,6 +320,7 @@ GameObject:
   - component: {fileID: 1273087704126765266}
   - component: {fileID: -8066396244911882113}
   - component: {fileID: 8220084151896915583}
+  - component: {fileID: 7398850757941481994}
   m_Layer: 0
   m_Name: Player
   m_TagString: PlayerParent
@@ -403,7 +421,6 @@ MonoBehaviour:
   ObservedComponents:
   - {fileID: 5969662172550294655}
   - {fileID: -8066396244911882113}
-  - {fileID: 8220084151896915583}
   viewIdField: 0
   InstantiationId: 0
   isRuntimeInstantiated: 0
@@ -484,6 +501,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   index: 0
+--- !u!114 &7398850757941481994
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2011674340154631083}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b4c2617af3dfcd4890c476456acaadf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  movementSpeed: 5
+  ball: {fileID: 5600758030696470154, guid: 26034aae3fea3a74292c5dda0a1b4e66, type: 3}
+  camera: {fileID: 2011674339360102907}
+  reloadTime: 2
 --- !u!1001 &5681224134953644342
 PrefabInstance:
   m_ObjectHideFlags: 0

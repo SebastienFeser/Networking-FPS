@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 5600758030696470153}
   - component: {fileID: 5600758030696470152}
   - component: {fileID: 2017853789251736711}
+  - component: {fileID: 8448404740374193029}
   m_Layer: 0
   m_Name: Ball
   m_TagString: Untagged
@@ -56,12 +57,26 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5600758030696470154}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dead353f5463fb04ca3e8f4e374e01a5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentPlayerIndex: -2
+  shooterActorNumber: -2
+  timeToDestroy: 4
+--- !u!114 &8448404740374193029
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5600758030696470154}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: daa6db745bba86544abc94062f2198da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  killerActorNumber: -2
   timeToDestroy: 4
 --- !u!1 &5600758031215311261
 GameObject:

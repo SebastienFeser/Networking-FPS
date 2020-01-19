@@ -44,6 +44,8 @@ public class NewGameManager : MonoBehaviourPunCallbacks
     }
 
     string playerKilledOrKillerName = "Error";
+    [SerializeField] float hasBeenKilledTextTime = 3f;
+    [SerializeField] float hasKilledTextTime = 3f;
     #endregion
 
     [SerializeField] Vector3[] initialSpawnPoints;              //4 different spawn
@@ -53,7 +55,12 @@ public class NewGameManager : MonoBehaviourPunCallbacks
         set => initialSpawnPoints = value;
     }
 
-    public NewPlayerController myPlayerController;
+    private NewPlayerController localPlayerController;
+    public NewPlayerController LocalPlayerController
+    {
+        get => localPlayerController;
+        set => localPlayerController = value;
+    }
 
     enum GameState
     {
@@ -68,13 +75,25 @@ public class NewGameManager : MonoBehaviourPunCallbacks
     int playerHasLoaded = 0;
 
     bool hasStartedCountDownCoroutine = false;
+    bool hasRespawned = false;
+
+    [SerializeField] float bulletVelocity;
+    public float BulletVelocity
+    {
+        get => bulletVelocity;
+        set => bulletVelocity = value;
+    }
+
+
+    [SerializeField] float invincibleTimeWhenRespawned = 3f;
 
     private void Start()
     {
         gameState = GameState.WAITING_TO_START;
         if (PhotonNetwork.IsMasterClient)
         {
-            photonView.RPC("MasterClientLoaded", RpcTarget.All);
+            photonView.RPC("InformMasterHasLoaded", RpcTarget.All);
+            photonView.RPC("InformMasterHasLoaded", RpcTarget.All);
         }
     }
 
@@ -82,7 +101,7 @@ public class NewGameManager : MonoBehaviourPunCallbacks
     {
         if (gameState == GameState.WAITING_TO_START)
         {
-
+            WaitingToStart();
         }
         else if (gameState == GameState.GAME)
         {
@@ -100,6 +119,7 @@ public class NewGameManager : MonoBehaviourPunCallbacks
         if (masterClientLoaded && !hasIncreasedLoadedList)
         {
             hasIncreasedLoadedList = true;
+            photonView.RPC("IncreasePlayerHasLoaded", RpcTarget.All);
         }
         if (PhotonNetwork.PlayerList.Length == playerHasLoaded && !hasStartedCountDownCoroutine)
         {
@@ -117,19 +137,52 @@ public class NewGameManager : MonoBehaviourPunCallbacks
         currentPlayer.GetComponentInChildren<NewPlayerCamera>().enabled = true;
     }
 
-    void GivePointsToKiller(int killerActorNumber)
+    public void GivePointsToKiller(int killerActorNumber)
     {
         photonView.RPC("GivePointsToKiller", RpcTarget.All, killerActorNumber, PhotonNetwork.LocalPlayer.ActorNumber);
     }
 
-    void Die()
+    public void Die(int killerActorNumber)
+    {
+        playerKilledOrKillerName = PhotonNetwork.CurrentRoom.GetPlayer(killerActorNumber).NickName;
+        GivePointsToKiller(killerActorNumber);
+        StartCoroutine("HasBeenKilled");
+        RespawnPlayer();
+    }
+
+    void RespawnPlayer()
+    {
+        float maxDistance = 0;
+        Vector3 respawnPoint = new Vector3(0, 0, 0);
+        foreach(Vector3 spawnPoint in InitialSpawnPoints)
+        {
+            if (Vector3.Distance(spawnPoint, localPlayerController.transform.position) > maxDistance)
+            {
+                maxDistance = Vector3.Distance(spawnPoint, localPlayerController.transform.position);
+                respawnPoint = spawnPoint;
+            }
+        }
+        localPlayerController.transform.position = respawnPoint;
+        hasRespawned = true;
+    }
+
+    public void IncreasePoints()
     {
 
     }
 
-    void IncreasePoints()
+    IEnumerator HasKilled()
     {
+        centralScreenText.text = "Has killed " + playerKilledOrKillerName;
+        yield return new WaitForSeconds(hasKilledTextTime);
+        centralScreenText.text = "";
+    }
 
+    IEnumerator HasBeenKilled()
+    {
+        centralScreenText.text = "Has been killed by " + playerKilledOrKillerName;
+        yield return new WaitForSeconds(hasBeenKilledTextTime);
+        centralScreenText.text = "";
     }
     #endregion
 
@@ -152,6 +205,7 @@ public class NewGameManager : MonoBehaviourPunCallbacks
         if (PhotonNetwork.LocalPlayer.ActorNumber == killerActorNumber)
         {
             playerKilledOrKillerName = PhotonNetwork.CurrentRoom.GetPlayer(killedActorNumber).NickName;
+            StartCoroutine("HasKilled");
         }
     }
     #endregion
