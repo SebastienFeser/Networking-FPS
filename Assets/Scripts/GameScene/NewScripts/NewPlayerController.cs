@@ -7,7 +7,12 @@ public class NewPlayerController : MonoBehaviourPunCallbacks
 {
     [SerializeField] private float movementSpeed;
     [SerializeField] GameObject ball;
-    [SerializeField] Camera camera;
+    [SerializeField] Camera playerCamera;
+    public Camera PlayerCamera
+    {
+        get => playerCamera;
+        set => playerCamera = value;
+    }
 
     NewGameManager gameManager;
 
@@ -45,10 +50,13 @@ public class NewPlayerController : MonoBehaviourPunCallbacks
     {
         if (canShoot)
         {
-            photonView.RPC("SpawnBall", RpcTarget.All, camera.transform.position, camera.transform.forward * gameManager.BulletVelocity, PhotonNetwork.LocalPlayer.ActorNumber);
-            reloadCurrentTime = 0;
-            canShoot = false;
-            gameManager.ReloadingPannel.SetActive(true);
+            if (Input.GetButtonDown("Shoot"))
+            {
+                photonView.RPC("SpawnBall", RpcTarget.All, playerCamera.transform.position, playerCamera.transform.forward * gameManager.BulletVelocity, PhotonNetwork.LocalPlayer.ActorNumber);
+                reloadCurrentTime = 0;
+                canShoot = false;
+                gameManager.ReloadingPannel.SetActive(true);
+            }
         }
         else
         {
@@ -60,6 +68,14 @@ public class NewPlayerController : MonoBehaviourPunCallbacks
             }
             gameManager.ReloadBar.fillAmount = reloadCurrentTime / reloadTime;
         }
+    }
+
+    [PunRPC]
+    void SpawnBall(Vector3 position, Vector3 velocity, int killerActorNumber)
+    {
+        GameObject ballInstantiated = Instantiate(ball, position, Quaternion.identity);
+        ballInstantiated.GetComponent<Rigidbody>().velocity = velocity;
+        ballInstantiated.GetComponent<NewBullet>().KillerActorNumber = killerActorNumber;
     }
 
 }

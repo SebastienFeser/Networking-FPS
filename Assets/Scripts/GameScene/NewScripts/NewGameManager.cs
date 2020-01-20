@@ -48,6 +48,8 @@ public class NewGameManager : MonoBehaviourPunCallbacks
     [SerializeField] float hasKilledTextTime = 3f;
     #endregion
 
+    [SerializeField] int killScore = 100;
+
     [SerializeField] Vector3[] initialSpawnPoints;              //4 different spawn
     public Vector3[] InitialSpawnPoints
     {
@@ -61,6 +63,8 @@ public class NewGameManager : MonoBehaviourPunCallbacks
         get => localPlayerController;
         set => localPlayerController = value;
     }
+
+    List<int> playerScore = new List<int>();
 
     enum GameState
     {
@@ -105,7 +109,7 @@ public class NewGameManager : MonoBehaviourPunCallbacks
         }
         else if (gameState == GameState.GAME)
         {
-
+            scoreText.text = "Your Score = " + playerScore[PhotonNetwork.LocalPlayer.ActorNumber - 1];
         }
         else if (gameState == GameState.END_GAME)
         {
@@ -124,13 +128,16 @@ public class NewGameManager : MonoBehaviourPunCallbacks
         if (PhotonNetwork.PlayerList.Length == playerHasLoaded && !hasStartedCountDownCoroutine)
         {
             hasStartedCountDownCoroutine = true;
+            SpawnPlayer();
+            gameState = GameState.GAME;
+            StartScore();
         }
     }
 
     void SpawnPlayer()
     {
         GameObject currentPlayer;
-        currentPlayer = PhotonNetwork.Instantiate("Player", initialSpawnPoints[PhotonNetwork.LocalPlayer.ActorNumber], Quaternion.identity);
+        currentPlayer = PhotonNetwork.Instantiate("Player", initialSpawnPoints[PhotonNetwork.LocalPlayer.ActorNumber - 1], Quaternion.identity);
         currentPlayer.GetComponent<NewPlayerController>().enabled = true;
         currentPlayer.GetComponentInChildren<Camera>().enabled = true;
         currentPlayer.GetComponentInChildren<AudioListener>().enabled = true;
@@ -171,6 +178,14 @@ public class NewGameManager : MonoBehaviourPunCallbacks
 
     }
 
+    void StartScore()
+    {
+        for (int i = 0; i < PhotonNetwork.PlayerList.Length; i++)
+        {
+            playerScore.Add(0);
+        }
+    }
+
     IEnumerator HasKilled()
     {
         centralScreenText.text = "Has killed " + playerKilledOrKillerName;
@@ -207,6 +222,7 @@ public class NewGameManager : MonoBehaviourPunCallbacks
             playerKilledOrKillerName = PhotonNetwork.CurrentRoom.GetPlayer(killedActorNumber).NickName;
             StartCoroutine("HasKilled");
         }
+        playerScore[killerActorNumber - 1] += killScore;
     }
     #endregion
 }

@@ -7,7 +7,12 @@ public class NewBullet : MonoBehaviour
 {
     float time = 0;
     int hitPlayerIndex = -1;
-    public int killerActorNumber = -2;
+    int killerActorNumber = -2;
+    public int KillerActorNumber
+    {
+        get => killerActorNumber;
+        set => killerActorNumber = value;
+    }
     [SerializeField] float timeToDestroy;
 
     private void Start()
