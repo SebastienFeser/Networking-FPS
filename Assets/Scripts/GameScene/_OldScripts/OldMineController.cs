@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MineController : MonoBehaviour
+public class OldMineController : MonoBehaviour
 {
     [SerializeField] float rayDistance;
     [SerializeField] Vector3 rayDirection;

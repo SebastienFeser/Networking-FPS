@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class NewPlayerCamera : MonoBehaviour
+public class OldPlayerCamera : MonoBehaviour
 {
     [SerializeField] private string mouseXInputName, mouseYInputName;
     [SerializeField] private float mouseSensitivity;

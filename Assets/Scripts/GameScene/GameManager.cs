@@ -2,16 +2,33 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using Photon.Pun;
+using UnityEngine.SceneManagement;
+using Photon.Realtime;
 
 public class GameManager : MonoBehaviourPunCallbacks
 {
-    [SerializeField] Vector3[] initialSpawnPoints;              //4 different spawn
-    public PlayerController myPlayerController;
-    public Vector3[] InitialSpawnPoints
+    #region UI
+    [SerializeField] TextMeshProUGUI centralScreenText;
+    public TextMeshProUGUI CentralScreenText
     {
-        get => initialSpawnPoints;
-        set => initialSpawnPoints = value;
+        get => centralScreenText;
+        set => centralScreenText = value;
+    }
+
+    [SerializeField] TextMeshProUGUI scoreText;
+    public TextMeshProUGUI ScoreText
+    {
+        get => scoreText;
+        set => scoreText = value;
+    }
+
+    [SerializeField] TextMeshProUGUI timeText;
+    public TextMeshProUGUI TimeText
+    {
+        get => timeText;
+        set => timeText = value;
     }
 
     [SerializeField] Image reloadBar;
@@ -22,125 +39,143 @@ public class GameManager : MonoBehaviourPunCallbacks
     }
 
     [SerializeField] GameObject reloadingPannel;
-    public  GameObject ReloadingPannel
+    public GameObject ReloadingPannel
     {
         get => reloadingPannel;
         set => reloadingPannel = value;
     }
 
-    bool masterHasLoadedScene = false;
+    string playerKilledOrKillerName = "Error";
+    [SerializeField] float hasBeenKilledTextTime = 3f;
+    [SerializeField] float hasKilledTextTime = 3f;
+    #endregion
+
+    [SerializeField] Material[] playerColors; 
+
+    [SerializeField] int killScore = 100;
+
+    [SerializeField] Vector3[] initialSpawnPoints;              //4 different spawn
+    public Vector3[] InitialSpawnPoints
+    {
+        get => initialSpawnPoints;
+        set => initialSpawnPoints = value;
+    }
+
+    private PlayerController localPlayerController;
+    public PlayerController LocalPlayerController
+    {
+        get => localPlayerController;
+        set => localPlayerController = value;
+    }
+
+    List<int> playerScore = new List<int>();
+
+    [SerializeField] AudioSource deathSource;
+    [SerializeField] AudioSource killSource;
 
     enum GameState
     {
-        WAITING_MASTER_LOADED_SCENE,
-        MASTER_HAS_LOADED_SCENE,
-        WAITING_FOR_EVERYONE_LOADED_SCENE,
-        EVERYONE_LOADED_SCENE,
-        START,
+        WAITING_TO_START,
+        GAME,
+        END_GAME
+
+    }
+    GameState gameState;
+    bool hasLoaded = false;
+    bool hasStartedCountDownCoroutine = false;
+    bool hasRespawned = false;
+
+    [SerializeField] float bulletVelocity;
+    public float BulletVelocity
+    {
+        get => bulletVelocity;
+        set => bulletVelocity = value;
     }
 
-    GameState gameState = GameState.WAITING_MASTER_LOADED_SCENE;
 
-    int playerHasLoaded = 0;
+    [SerializeField] float invincibleTimeWhenRespawned = 3f;
+    [SerializeField] int victoryScore = 1000;
 
-    int playerIndex;
+    int playersInRoomLastFrame;
 
-    float gameTimer;
-    float GameTimer
+    string winnerName = "Error";
+
+    private void Start()
     {
-        get => gameTimer;
-        set => gameTimer = value;
-    }
-
-    private void Awake()
-    {
-        
-    }
-
-    private void OnDrawGizmos()
-    {
-        foreach (Vector3 spawnPoint in initialSpawnPoints)
-        {
-            Gizmos.DrawSphere(spawnPoint, 0.1f);
-        }
+        gameState = GameState.WAITING_TO_START;
+        playersInRoomLastFrame = PhotonNetwork.PlayerList.Length;
     }
 
     private void Update()
     {
-        switch (gameState)
+        if (gameState == GameState.WAITING_TO_START)
         {
-            case GameState.WAITING_MASTER_LOADED_SCENE:
-                WaitingMasterConnected();
-                break;
-            case GameState.WAITING_FOR_EVERYONE_LOADED_SCENE:
-                WaitingForEveryoneLoadedScene();
-                break;
-            case GameState.EVERYONE_LOADED_SCENE:
-                EveryOneHasLoadedScene();
-                break;
+            WaitingToStart();
         }
-    }
-
-    void WaitingMasterConnected()
-    {
-        Debug.Log("WaitMasterConnected");
-        if (PhotonNetwork.IsMasterClient)
+        else if (gameState == GameState.GAME)
         {
-
-            photonView.RPC("IncreasePlayerHasLoaded", RpcTarget.All);
-            photonView.RPC("InformTheMasterHasLoadedScene", RpcTarget.All);
-            gameState = GameState.WAITING_FOR_EVERYONE_LOADED_SCENE;
-
-        }
-        else if (masterHasLoadedScene)
-        {
-            photonView.RPC("IncreasePlayerHasLoaded", RpcTarget.All);
-            gameState = GameState.WAITING_FOR_EVERYONE_LOADED_SCENE;
-        }
-    }
-
-    void WaitingForEveryoneLoadedScene()
-    {
-        Debug.Log("WaitEveryoneConnected");
-        if (PhotonNetwork.IsMasterClient)
-        {
-            if (playerHasLoaded == PhotonNetwork.CurrentRoom.PlayerCount)
+            scoreText.text = "Your Score = " + playerScore[PhotonNetwork.LocalPlayer.ActorNumber - 1];
+            if (playerScore[PhotonNetwork.LocalPlayer.ActorNumber - 1] >= victoryScore)
             {
-                photonView.RPC("EveryoneHasLoadedSceneGameState", RpcTarget.All);
-                Debug.Log(gameState);
+                photonView.RPC("EndGame", RpcTarget.All, PhotonNetwork.LocalPlayer.NickName);
             }
         }
-    }
-
-    void EveryOneHasLoadedScene()
-    {
-        Debug.Log("Everyone loaded");
-        GetPlayerIndex();
-        SpawnPlayer();
-        gameState = GameState.START;
-    }
-
-    void GetPlayerIndex()
-    {
-        for (int i = 0; i < PhotonNetwork.PlayerList.Length; i++)
+        else if (gameState == GameState.END_GAME)
         {
-            if (PhotonNetwork.PlayerList[i] == PhotonNetwork.LocalPlayer)
+            LocalPlayerController.IsInGameState = false;
+        }
+
+        if (playersInRoomLastFrame != PhotonNetwork.PlayerList.Length)
+        {
+            if (PhotonNetwork.PlayerList.Length == 1)
             {
-                playerIndex = i;
+                photonView.RPC("EndGame", RpcTarget.All, PhotonNetwork.LocalPlayer.NickName);
             }
+        }
+        playersInRoomLastFrame = PhotonNetwork.PlayerList.Length;
+
+    }
+
+    private void OnDrawGizmos()
+    {
+        foreach(Vector3 spawnPoint in initialSpawnPoints)
+        {
+            Gizmos.DrawSphere(spawnPoint, 1);
+        }
+    }
+
+    #region Methods
+    void WaitingToStart()
+    {
+        if (!hasLoaded)
+        {
+            SpawnPlayer();
+            hasLoaded = true;
+        }
+
+        if (FindObjectsOfType<PlayerController>().Length == PhotonNetwork.PlayerList.Length && !hasStartedCountDownCoroutine)
+        {
+            hasStartedCountDownCoroutine = true;
+            gameState = GameState.GAME;
+            StartCoroutine("GameStartCoroutine");
+            StartScore();
         }
     }
 
     void SpawnPlayer()
     {
-        Debug.Log("Spawn Player");
         GameObject currentPlayer;
-        currentPlayer = PhotonNetwork.Instantiate("Player", initialSpawnPoints[playerIndex], Quaternion.identity);
-        currentPlayer.GetComponent<PlayerController>().enabled = true;
+        currentPlayer = PhotonNetwork.Instantiate("Player", initialSpawnPoints[PhotonNetwork.LocalPlayer.ActorNumber - 1], Quaternion.identity);
+        
+        PlayerController currentPlayerController = currentPlayer.GetComponent<PlayerController>();
+        currentPlayerController.enabled = true;
+        for (int i = 0; i < currentPlayerController.PlayerMeshRenderers.Length; i++)
+        {
+            currentPlayerController.PlayerMeshRenderers[i].materials = new Material[] { playerColors[PhotonNetwork.LocalPlayer.ActorNumber - 1] };
+        }
         currentPlayer.GetComponentInChildren<Camera>().enabled = true;
         currentPlayer.GetComponentInChildren<AudioListener>().enabled = true;
         currentPlayer.GetComponentInChildren<PlayerCamera>().enabled = true;
-        currentPlayer.GetComponent<PlayerData>().Index = playerIndex;
     }
 
     public void GivePointsToKiller(int killerActorNumber)
@@ -148,34 +183,111 @@ public class GameManager : MonoBehaviourPunCallbacks
         photonView.RPC("GivePointsToKiller", RpcTarget.All, killerActorNumber, PhotonNetwork.LocalPlayer.ActorNumber);
     }
 
-    [PunRPC]
-    void IncreasePlayerHasLoaded()
+    public void Die(int killerActorNumber)
     {
-        playerHasLoaded += 1;
+        playerKilledOrKillerName = PhotonNetwork.CurrentRoom.GetPlayer(killerActorNumber).NickName;
+        GivePointsToKiller(killerActorNumber);
+        StartCoroutine("HasBeenKilled");
+        RespawnPlayer();
     }
 
-    [PunRPC]
-    void InformTheMasterHasLoadedScene()
+    void RespawnPlayer()
     {
-        masterHasLoadedScene = true;
+        float maxDistance = 0;
+        Vector3 respawnPoint = new Vector3(0, 0, 0);
+        foreach(Vector3 spawnPoint in InitialSpawnPoints)
+        {
+            if (Vector3.Distance(spawnPoint, localPlayerController.transform.position) > maxDistance)
+            {
+                maxDistance = Vector3.Distance(spawnPoint, localPlayerController.transform.position);
+                respawnPoint = spawnPoint;
+            }
+        }
+        localPlayerController.transform.position = respawnPoint;
+        hasRespawned = true;
     }
 
-    [PunRPC]
-    void EveryoneHasLoadedSceneGameState()
+    void StartScore()
     {
-        gameState = GameState.EVERYONE_LOADED_SCENE;
+        for (int i = 0; i < PhotonNetwork.PlayerList.Length; i++)
+        {
+            playerScore.Add(0);
+        }
     }
+
+    IEnumerator HasKilled()
+    {
+        killSource.Play();
+        centralScreenText.text = "Has killed " + playerKilledOrKillerName;
+        yield return new WaitForSeconds(hasKilledTextTime);
+        centralScreenText.text = "";
+    }
+
+    IEnumerator HasBeenKilled()
+    {
+        deathSource.Play();
+        centralScreenText.text = "Has been killed by " + playerKilledOrKillerName;
+        yield return new WaitForSeconds(hasBeenKilledTextTime);
+        centralScreenText.text = "";
+    }
+
+    IEnumerator GameStartCoroutine()
+    {
+        centralScreenText.text = "Ready?";
+        yield return new WaitForSeconds(3f);
+        centralScreenText.text = "3";
+        yield return new WaitForSeconds(1f);
+        centralScreenText.text = "2";
+        yield return new WaitForSeconds(1f);
+        centralScreenText.text = "1";
+        yield return new WaitForSeconds(1f);
+        centralScreenText.text = "GOOO";
+        localPlayerController.IsInGameState = true;
+        yield return new WaitForSeconds(2f);
+        centralScreenText.text = "";
+    }
+
+    IEnumerator Victory()
+    {
+        centralScreenText.text = "Stoooop!";
+        yield return new WaitForSeconds(3f);
+        centralScreenText.text = "And the winner is...";
+        yield return new WaitForSeconds(3f);
+        centralScreenText.text = winnerName;
+        yield return new WaitForSeconds(5f);
+        centralScreenText.text = "Thanks for playing my game!";
+        yield return new WaitForSeconds(5f);
+        PhotonNetwork.Disconnect();
+
+    }
+
+    public override void OnDisconnected(DisconnectCause cause)
+    {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        SceneManager.LoadScene("GameLauncher");
+    }
+    #endregion
+
+    #region RPCS
 
     [PunRPC]
     void GivePointsToKiller(int killerActorNumber, int killedActorNumber)
     {
-        Debug.Log("Give Points To Killer Actor Number = " + killerActorNumber);
-        Debug.Log("OwnerActorNr = " + PhotonNetwork.LocalPlayer.ActorNumber + " and killerActorNumber = " + killerActorNumber);
         if (PhotonNetwork.LocalPlayer.ActorNumber == killerActorNumber)
         {
-
-            myPlayerController.PlayerKilledOrKillerName = PhotonNetwork.CurrentRoom.GetPlayer(killedActorNumber).NickName;
-            myPlayerController.PlayerHasKilled();
+            playerKilledOrKillerName = PhotonNetwork.CurrentRoom.GetPlayer(killedActorNumber).NickName;
+            StartCoroutine("HasKilled");
         }
+        playerScore[killerActorNumber - 1] += killScore;
     }
+
+    [PunRPC]
+    void EndGame(string winnerNameInRPC)
+    {
+        winnerName = winnerNameInRPC;
+        gameState = GameState.END_GAME;
+        StartCoroutine("Victory");
+    }
+    #endregion
 }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
 
-public class BallShoot : MonoBehaviourPunCallbacks
+public class OldBallShoot : MonoBehaviourPunCallbacks
 {
     float time = 0;
     int hitPlayerIndex = -1;
@@ -39,14 +39,14 @@ public class BallShoot : MonoBehaviourPunCallbacks
                 }
                 else
                 {
-                    if (other.GetComponent<PlayerController>().isInvincible)
+                    if (other.GetComponent<OldPlayerController>().isInvincible)
                     {
                         Destroy(gameObject);
                     }
                     else
                     {
                         Debug.Log("BallShoot Actor Number = " + shooterActorNumber);
-                        other.GetComponent<PlayerController>().Die(shooterActorNumber);
+                        other.GetComponent<OldPlayerController>().Die(shooterActorNumber);
                         Destroy(gameObject);
                     }
                 }

@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-public class UITexts : MonoBehaviour
+public class OldUITexts : MonoBehaviour
 {
     [SerializeField] TextMeshProUGUI centralScreenText;
     public TextMeshProUGUI CentralScreenText

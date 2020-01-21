@@ -92,6 +92,8 @@ public class MainPannel : MonoBehaviourPunCallbacks
     public void QuitGame()
     {
         PhotonNetwork.LeaveRoom();
+        DesactivateAllPannels();
+        selectionPannel.SetActive(true);
     }
     #endregion
 

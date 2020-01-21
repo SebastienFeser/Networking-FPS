@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
 
-public class PlayerData : MonoBehaviour, Photon.Pun.IPunObservable
+public class OldPlayerData : MonoBehaviour, Photon.Pun.IPunObservable
 {
     [SerializeField] int index;
     public int Index

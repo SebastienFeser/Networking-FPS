@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
 
-public class NewBullet : MonoBehaviour
+public class Bullet : MonoBehaviour
 {
     float time = 0;
     int hitPlayerIndex = -1;
@@ -47,13 +47,13 @@ public class NewBullet : MonoBehaviour
                 }
                 else
                 {
-                    if (other.GetComponent<NewPlayerController>().IsInvincible)
+                    if (other.GetComponent<PlayerController>().IsInvincible)
                     {
                         //Destroy(gameObject);
                     }
                     else
                     {
-                        FindObjectOfType<NewGameManager>().Die(killerActorNumber);
+                        FindObjectOfType<GameManager>().Die(killerActorNumber);
                         //Destroy(gameObject);
                     }
                 }
