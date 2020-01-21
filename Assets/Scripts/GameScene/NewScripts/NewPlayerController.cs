@@ -8,10 +8,23 @@ public class NewPlayerController : MonoBehaviourPunCallbacks
     [SerializeField] private float movementSpeed;
     [SerializeField] GameObject ball;
     [SerializeField] Camera playerCamera;
+
+    [SerializeField] AudioSource shootSource;
+    [SerializeField] AudioSource shootFailedSource;
+
     public Camera PlayerCamera
     {
         get => playerCamera;
         set => playerCamera = value;
+    }
+
+
+
+    [SerializeField] MeshRenderer[] playerMeshRenderers;
+    public MeshRenderer[] PlayerMeshRenderers
+    {
+        get => playerMeshRenderers;
+        set => playerMeshRenderers = value;
     }
 
     NewGameManager gameManager;
@@ -28,6 +41,13 @@ public class NewPlayerController : MonoBehaviourPunCallbacks
         set => isInvincible = value;
     }
 
+    bool isInGameState = false;
+    public bool IsInGameState
+    {
+        get => isInGameState;
+        set => isInGameState = value;
+    }
+
     private void Start()
     {
         playerRigidbody = GetComponent<Rigidbody>();
@@ -37,13 +57,20 @@ public class NewPlayerController : MonoBehaviourPunCallbacks
 
     private void Update()
     {
-        float getHorizontal = Input.GetAxisRaw("Horizontal");
-        float getVertical = Input.GetAxisRaw("Vertical");
-        Shooting();
+        if (isInGameState)
+        {
+            float getHorizontal = Input.GetAxisRaw("Horizontal");
+            float getVertical = Input.GetAxisRaw("Vertical");
+            Shooting();
 
-        float velocityYBackup = playerRigidbody.velocity.y;
-        playerRigidbody.velocity = transform.forward * movementSpeed * getVertical + transform.right * movementSpeed * getHorizontal;
-        playerRigidbody.velocity = new Vector3(playerRigidbody.velocity.x, velocityYBackup, playerRigidbody.velocity.z);
+            float velocityYBackup = playerRigidbody.velocity.y;
+            playerRigidbody.velocity = transform.forward * movementSpeed * getVertical + transform.right * movementSpeed * getHorizontal;
+            playerRigidbody.velocity = new Vector3(playerRigidbody.velocity.x, velocityYBackup, playerRigidbody.velocity.z);
+        }
+        else
+        {
+            playerRigidbody.velocity = Vector3.zero;
+        }
     }
 
     void Shooting()
@@ -56,10 +83,15 @@ public class NewPlayerController : MonoBehaviourPunCallbacks
                 reloadCurrentTime = 0;
                 canShoot = false;
                 gameManager.ReloadingPannel.SetActive(true);
+                shootSource.Play();
             }
         }
         else
         {
+            if (Input.GetButtonDown("Shoot"))
+            {
+                shootFailedSource.Play();
+            }
             reloadCurrentTime += Time.deltaTime;
             if (reloadCurrentTime >= reloadTime)
             {

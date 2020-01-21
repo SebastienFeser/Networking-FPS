@@ -16,7 +16,7 @@ public class MainPannel : MonoBehaviourPunCallbacks
     [SerializeField] GameObject selectionPannel;
     [SerializeField] GameObject createRoomPannel;
     [SerializeField] GameObject joinRandomRoomPannel;
-    [SerializeField] GameObject lobbySelectionPannel;
+    [SerializeField] GameObject roomSelectionPannel;
     [SerializeField] GameObject insideRoomPannel;
 
     [SerializeField] GameObject roomUIPrefab;
@@ -26,17 +26,23 @@ public class MainPannel : MonoBehaviourPunCallbacks
 
     [SerializeField] TopPannel topPannel;
 
-    Dictionary<string, RoomInfo> roomList;
-    Dictionary<string, GameObject> roomListPrefabs;
+    Dictionary<string, RoomInfo> roomList = new Dictionary<string, RoomInfo>();
+    Dictionary<string, GameObject> roomListPrefabs = new Dictionary<string, GameObject>();
+
+    [SerializeField] GameObject roomListContent;
 
     string roomName = "RandomRoom";
     byte amountOfPlayers = 4;
 
+    private void Start()
+    {
+        PhotonNetwork.AutomaticallySyncScene = true;
+    }
 
     #region UI
     public void LoginButton()
     {
-        
+
         string loginPlayerName = loginNameInputField.text;
         if (loginPlayerName == "")
         {
@@ -62,6 +68,7 @@ public class MainPannel : MonoBehaviourPunCallbacks
     public void RoomListSelectionButton()
     {
         DesactivateAllPannels();
+        roomSelectionPannel.SetActive(true);
     }
 
     public void CreateRoomButton()
@@ -74,9 +81,12 @@ public class MainPannel : MonoBehaviourPunCallbacks
 
     public void StartGame()
     {
-        //photonView.RPC("DeactivateAllPannelsForEveryOne", RpcTarget.All);
-        DesactivateAllPannels();
-        PhotonNetwork.LoadLevel("GameScene");
+        if (PhotonNetwork.IsMasterClient)
+        {
+            PhotonNetwork.CurrentRoom.IsOpen = false;
+            PhotonNetwork.CurrentRoom.IsVisible = false;
+            PhotonNetwork.LoadLevel("GameScene");
+        }
     }
 
     public void QuitGame()
@@ -95,17 +105,18 @@ public class MainPannel : MonoBehaviourPunCallbacks
     public override void OnJoinedLobby()
     {
         selectionPannel.SetActive(true);
-        Debug.Log("test");
     }
 
     public override void OnRoomListUpdate(List<RoomInfo> roomList)
     {
-        RenamePlayers();
+        ClearRoomListPrefabs();
+        UpdateRoomInfo(roomList);
+        UpdateRoomListPrefabs();
     }
 
     public override void OnLeftLobby()
     {
-        
+
     }
 
     public override void OnCreateRoomFailed(short returnCode, string message)
@@ -158,7 +169,7 @@ public class MainPannel : MonoBehaviourPunCallbacks
 
     public override void OnPlayerPropertiesUpdate(Player targetPlayer, ExitGames.Client.Photon.Hashtable changedProps)
     {
-        
+
     }
 
     #endregion
@@ -169,7 +180,7 @@ public class MainPannel : MonoBehaviourPunCallbacks
         selectionPannel.SetActive(false);
         createRoomPannel.SetActive(false);
         joinRandomRoomPannel.SetActive(false);
-        lobbySelectionPannel.SetActive(false);
+        roomSelectionPannel.SetActive(false);
         insideRoomPannel.SetActive(false);
     }
 
@@ -181,23 +192,56 @@ public class MainPannel : MonoBehaviourPunCallbacks
         }
     }
 
-    void ClearRoomList()
+    void UpdateRoomInfo(List<RoomInfo> roomListNetworked)
     {
+        //Remove room if it got closed, became invisible or was removed
+        foreach (RoomInfo info in roomListNetworked)
+        {
+            if (!info.IsOpen || !info.IsVisible || info.RemovedFromList)
+            {
+                if (roomListPrefabs.ContainsKey(info.Name))
+                {
+                    roomListPrefabs.Remove(info.Name);
+                }
+
+                continue;
+            }
+
+            //Updata prefab list info
+            if (roomList.ContainsKey(info.Name))
+            {
+                roomList[info.Name] = info;
+            }
+            else
+            {
+                //Add new room
+                roomList.Add(info.Name, info);
+            }
+        }
+
 
     }
 
-    void UpdateRoomList()
+    void ClearRoomListPrefabs()
+    {
+        foreach (GameObject room in roomListPrefabs.Values)
+        {
+            Destroy(room.gameObject);
+        }
+        roomListPrefabs.Clear();
+    }
+
+    void UpdateRoomListPrefabs()
     {
         foreach (RoomInfo info in roomList.Values)
         {
-            //Instantiate Room
-        }
-    }
+            GameObject room = Instantiate(roomUIPrefab);
+            room.transform.SetParent(roomListContent.transform);
+            room.transform.localScale = Vector3.one;
+            room.GetComponent<RoomInRoomList>().Initialize(info.Name, (byte)info.PlayerCount, (byte)info.MaxPlayers);
 
-    [PunRPC]
-    void DeactivateAllPannelsForEveryOne()
-    {
-        DesactivateAllPannels();
+            roomListPrefabs.Add(info.Name, room);
+        }
     }
 
 }

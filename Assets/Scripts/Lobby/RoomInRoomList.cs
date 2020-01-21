@@ -2,18 +2,25 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class RoomInRoomList : MonoBehaviour
 {
-    [SerializeField] Text roomNameText;
-    public Text RoomNameText
+    public void Initialize(string name, byte playerCount, byte maxPlayers)
+    {
+        roomNameText.text = name;
+        roomPlayersText.text = playerCount + "/" + maxPlayers;
+    }
+
+    [SerializeField] TextMeshProUGUI roomNameText;
+    public TextMeshProUGUI RoomNameText
     {
         get => roomNameText;
         set => roomNameText = value;
     }
 
-    [SerializeField] Text roomPlayersText;
-    public Text RoomPlayersText
+    [SerializeField] TextMeshProUGUI roomPlayersText;
+    public TextMeshProUGUI RoomPlayersText
     {
         get => roomPlayersText;
         set => roomPlayersText = value;

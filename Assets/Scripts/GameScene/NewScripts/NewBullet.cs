@@ -14,10 +14,13 @@ public class NewBullet : MonoBehaviour
         set => killerActorNumber = value;
     }
     [SerializeField] float timeToDestroy;
+    [SerializeField] AudioSource fireBurnSource;
 
     private void Start()
     {
         time = 0;
+        fireBurnSource.loop = true;
+        fireBurnSource.Play();
     }
 
     private void Update()

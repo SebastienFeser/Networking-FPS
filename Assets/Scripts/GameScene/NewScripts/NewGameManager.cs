@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Photon.Pun;
+using UnityEngine.SceneManagement;
+using Photon.Realtime;
 
 public class NewGameManager : MonoBehaviourPunCallbacks
 {
@@ -48,6 +50,8 @@ public class NewGameManager : MonoBehaviourPunCallbacks
     [SerializeField] float hasKilledTextTime = 3f;
     #endregion
 
+    [SerializeField] Material[] playerColors; 
+
     [SerializeField] int killScore = 100;
 
     [SerializeField] Vector3[] initialSpawnPoints;              //4 different spawn
@@ -66,6 +70,9 @@ public class NewGameManager : MonoBehaviourPunCallbacks
 
     List<int> playerScore = new List<int>();
 
+    [SerializeField] AudioSource deathSource;
+    [SerializeField] AudioSource killSource;
+
     enum GameState
     {
         WAITING_TO_START,
@@ -74,10 +81,7 @@ public class NewGameManager : MonoBehaviourPunCallbacks
 
     }
     GameState gameState;
-    bool masterClientLoaded = false;
-    bool hasIncreasedLoadedList = false;
-    int playerHasLoaded = 0;
-
+    bool hasLoaded = false;
     bool hasStartedCountDownCoroutine = false;
     bool hasRespawned = false;
 
@@ -90,15 +94,16 @@ public class NewGameManager : MonoBehaviourPunCallbacks
 
 
     [SerializeField] float invincibleTimeWhenRespawned = 3f;
+    [SerializeField] int victoryScore = 1000;
+
+    int playersInRoomLastFrame;
+
+    string winnerName = "Error";
 
     private void Start()
     {
         gameState = GameState.WAITING_TO_START;
-        if (PhotonNetwork.IsMasterClient)
-        {
-            photonView.RPC("InformMasterHasLoaded", RpcTarget.All);
-            photonView.RPC("InformMasterHasLoaded", RpcTarget.All);
-        }
+        playersInRoomLastFrame = PhotonNetwork.PlayerList.Length;
     }
 
     private void Update()
@@ -110,26 +115,49 @@ public class NewGameManager : MonoBehaviourPunCallbacks
         else if (gameState == GameState.GAME)
         {
             scoreText.text = "Your Score = " + playerScore[PhotonNetwork.LocalPlayer.ActorNumber - 1];
+            if (playerScore[PhotonNetwork.LocalPlayer.ActorNumber - 1] >= victoryScore)
+            {
+                photonView.RPC("EndGame", RpcTarget.All, PhotonNetwork.LocalPlayer.NickName);
+            }
         }
         else if (gameState == GameState.END_GAME)
         {
+            LocalPlayerController.IsInGameState = false;
+        }
 
+        if (playersInRoomLastFrame != PhotonNetwork.PlayerList.Length)
+        {
+            if (PhotonNetwork.PlayerList.Length == 1)
+            {
+                photonView.RPC("EndGame", RpcTarget.All, PhotonNetwork.LocalPlayer.NickName);
+            }
+        }
+        playersInRoomLastFrame = PhotonNetwork.PlayerList.Length;
+
+    }
+
+    private void OnDrawGizmos()
+    {
+        foreach(Vector3 spawnPoint in initialSpawnPoints)
+        {
+            Gizmos.DrawSphere(spawnPoint, 1);
         }
     }
 
     #region Methods
     void WaitingToStart()
     {
-        if (masterClientLoaded && !hasIncreasedLoadedList)
+        if (!hasLoaded)
         {
-            hasIncreasedLoadedList = true;
-            photonView.RPC("IncreasePlayerHasLoaded", RpcTarget.All);
+            SpawnPlayer();
+            hasLoaded = true;
         }
-        if (PhotonNetwork.PlayerList.Length == playerHasLoaded && !hasStartedCountDownCoroutine)
+
+        if (FindObjectsOfType<NewPlayerController>().Length == PhotonNetwork.PlayerList.Length && !hasStartedCountDownCoroutine)
         {
             hasStartedCountDownCoroutine = true;
-            SpawnPlayer();
             gameState = GameState.GAME;
+            StartCoroutine("GameStartCoroutine");
             StartScore();
         }
     }
@@ -138,7 +166,13 @@ public class NewGameManager : MonoBehaviourPunCallbacks
     {
         GameObject currentPlayer;
         currentPlayer = PhotonNetwork.Instantiate("Player", initialSpawnPoints[PhotonNetwork.LocalPlayer.ActorNumber - 1], Quaternion.identity);
-        currentPlayer.GetComponent<NewPlayerController>().enabled = true;
+        
+        NewPlayerController currentPlayerController = currentPlayer.GetComponent<NewPlayerController>();
+        currentPlayerController.enabled = true;
+        for (int i = 0; i < currentPlayerController.PlayerMeshRenderers.Length; i++)
+        {
+            currentPlayerController.PlayerMeshRenderers[i].materials = new Material[] { playerColors[PhotonNetwork.LocalPlayer.ActorNumber - 1] };
+        }
         currentPlayer.GetComponentInChildren<Camera>().enabled = true;
         currentPlayer.GetComponentInChildren<AudioListener>().enabled = true;
         currentPlayer.GetComponentInChildren<NewPlayerCamera>().enabled = true;
@@ -173,11 +207,6 @@ public class NewGameManager : MonoBehaviourPunCallbacks
         hasRespawned = true;
     }
 
-    public void IncreasePoints()
-    {
-
-    }
-
     void StartScore()
     {
         for (int i = 0; i < PhotonNetwork.PlayerList.Length; i++)
@@ -188,6 +217,7 @@ public class NewGameManager : MonoBehaviourPunCallbacks
 
     IEnumerator HasKilled()
     {
+        killSource.Play();
         centralScreenText.text = "Has killed " + playerKilledOrKillerName;
         yield return new WaitForSeconds(hasKilledTextTime);
         centralScreenText.text = "";
@@ -195,24 +225,51 @@ public class NewGameManager : MonoBehaviourPunCallbacks
 
     IEnumerator HasBeenKilled()
     {
+        deathSource.Play();
         centralScreenText.text = "Has been killed by " + playerKilledOrKillerName;
         yield return new WaitForSeconds(hasBeenKilledTextTime);
         centralScreenText.text = "";
     }
+
+    IEnumerator GameStartCoroutine()
+    {
+        centralScreenText.text = "Ready?";
+        yield return new WaitForSeconds(3f);
+        centralScreenText.text = "3";
+        yield return new WaitForSeconds(1f);
+        centralScreenText.text = "2";
+        yield return new WaitForSeconds(1f);
+        centralScreenText.text = "1";
+        yield return new WaitForSeconds(1f);
+        centralScreenText.text = "GOOO";
+        localPlayerController.IsInGameState = true;
+        yield return new WaitForSeconds(2f);
+        centralScreenText.text = "";
+    }
+
+    IEnumerator Victory()
+    {
+        centralScreenText.text = "Stoooop!";
+        yield return new WaitForSeconds(3f);
+        centralScreenText.text = "And the winner is...";
+        yield return new WaitForSeconds(3f);
+        centralScreenText.text = winnerName;
+        yield return new WaitForSeconds(5f);
+        centralScreenText.text = "Thanks for playing my game!";
+        yield return new WaitForSeconds(5f);
+        PhotonNetwork.Disconnect();
+
+    }
+
+    public override void OnDisconnected(DisconnectCause cause)
+    {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        SceneManager.LoadScene("GameLauncher");
+    }
     #endregion
 
     #region RPCS
-    [PunRPC]
-    void IncreasePlayerHasLoaded()
-    {
-        playerHasLoaded += 1;
-    }
-
-    [PunRPC]
-    void InformMasterHasLoaded()
-    {
-        masterClientLoaded = true;
-    }
 
     [PunRPC]
     void GivePointsToKiller(int killerActorNumber, int killedActorNumber)
@@ -223,6 +280,14 @@ public class NewGameManager : MonoBehaviourPunCallbacks
             StartCoroutine("HasKilled");
         }
         playerScore[killerActorNumber - 1] += killScore;
+    }
+
+    [PunRPC]
+    void EndGame(string winnerNameInRPC)
+    {
+        winnerName = winnerNameInRPC;
+        gameState = GameState.END_GAME;
+        StartCoroutine("Victory");
     }
     #endregion
 }
